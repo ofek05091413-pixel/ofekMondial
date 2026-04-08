@@ -1,12 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="he">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>מונדיאל PRO עם טקטיקות ו-AI</title>
-
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
     <style>
         body {
             direction: rtl;
@@ -18,7 +16,6 @@
             padding: 10px;
         }
 
-        /* משחקים */
         .match {
             background: #1e5ed6;
             margin: 8px auto;
@@ -28,14 +25,12 @@
             border-radius: 10px;
         }
 
-        /* אינפוטים */
         input {
             width: 45px;
             text-align: center;
             font-size: 16px;
         }
 
-        /* טבלה */
         .table-wrapper {
             overflow-x: auto;
         }
@@ -55,7 +50,6 @@
             cursor: pointer;
         }
 
-        /* מגרש */
         #fieldContainer {
             position: relative;
             width: 100%;
@@ -72,16 +66,15 @@
             border-radius: 10px;
         }
 
-        /* קנבס */
         canvas {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
+            pointer-events: none;
         }
 
-        /* שחקנים */
         .player {
             position: absolute;
             background: yellow;
@@ -89,22 +82,21 @@
             padding: 5px;
             border-radius: 6px;
             font-size: 11px;
-            transform: translate(-50%, -50%);
+            transform: translate(-50%,-50%);
             cursor: grab;
             z-index: 2;
         }
 
-        /* כפתורים */
         button, select {
             margin: 6px;
             padding: 10px;
             border-radius: 8px;
             border: none;
             font-size: 14px;
+            touch-action: manipulation;
         }
 
-        /* מובייל */
-        @media (max-width: 600px) {
+        @media (max-width:600px) {
             .player {
                 font-size: 9px;
                 padding: 3px;
@@ -121,31 +113,22 @@
         }
     </style>
 </head>
-
 <body>
-
     <h1>🏆 מונדיאל PRO</h1>
-
     <div id="matches"></div>
     <button id="calculate">חשב טבלה</button>
-
     <div class="table-wrapper">
         <table>
-            <thead>
-                <tr><th>נבחרת</th><th>נק'</th><th>שערים</th></tr>
-            </thead>
+            <thead><tr><th>נבחרת</th><th>נק'</th><th>שערים</th></tr></thead>
             <tbody id="tableBody"></tbody>
         </table>
     </div>
-
     <hr>
-
     <h2>⚽ לוח טקטיקות</h2>
     <select id="teamSelect"></select>
     <button id="clearDraw">נקה ציור</button>
     <button id="aiSuggest">🤖 הצע טקטיקה AI</button>
     <div id="aiBox"></div>
-
     <div id="fieldContainer">
         <div id="field"></div>
         <canvas id="draw"></canvas>
@@ -153,176 +136,102 @@
 
     <script>
         $(function () {
-
             const teams = {
                 "ברזיל": ["אליסון", "דנילו", "מרקיניוס", "סילבה", "קאסמירו", "פאקיטה", "ניימאר", "ויניסיוס", "רישרליסון", "רפיניה", "רודריגו"],
                 "ארגנטינה": ["מרטינס", "מולינה", "אוטמנדי", "רומרו", "דה פול", "מסי", "די מריה", "אלברס", "אנזו", "מקליסטר", "טגליאפיקו"],
                 "צרפת": ["יוריס", "קונדה", "וראן", "אופמקאנו", "תיאו", "גריזמן", "אמבפה", "ג'ירו", "טשואמני", "ראביו", "דמבלה"],
                 "גרמניה": ["נוייר", "קימיך", "רודיגר", "זולה", "גורצקה", "מולר", "סאנה", "הברץ", "גנאברי", "מוסיאלה", "ראום"]
             };
-
-            const basePositions = [
-                { top: 90, left: 50 },
-                { top: 70, left: 20 }, { top: 70, left: 40 }, { top: 70, left: 60 }, { top: 70, left: 80 },
-                { top: 50, left: 30 }, { top: 50, left: 50 }, { top: 50, left: 70 },
-                { top: 30, left: 20 }, { top: 30, left: 50 }, { top: 30, left: 80 }
-            ];
-
+            const basePositions = [{ top: 90, left: 50 }, { top: 70, left: 20 }, { top: 70, left: 40 }, { top: 70, left: 60 }, { top: 70, left: 80 }, { top: 50, left: 30 }, { top: 50, left: 50 }, { top: 50, left: 70 }, { top: 30, left: 20 }, { top: 30, left: 50 }, { top: 30, left: 80 }];
             let saved = {};
-
             Object.keys(teams).forEach(t => $("#teamSelect").append(`<option>${t}</option>`));
-
             const teamList = Object.keys(teams);
-
             let matches = [];
-            for (let i = 0; i < teamList.length; i++) {
-                for (let j = i + 1; j < teamList.length; j++) {
-                    matches.push({ team1: teamList[i], team2: teamList[j] });
-                }
-            }
-
-            matches.forEach((m, i) => {
-                $("#matches").append(`<div class="match">${m.team1} <input id="s1_${i}"> - <input id="s2_${i}"> ${m.team2}</div>`);
-            });
-
+            for (let i = 0; i < teamList.length; i++) { for (let j = i + 1; j < teamList.length; j++) { matches.push({ team1: teamList[i], team2: teamList[j] }); } }
+            matches.forEach((m, i) => { $("#matches").append(`<div class="match">${m.team1} <input id="s1_${i}"> - <input id="s2_${i}"> ${m.team2}</div>`); });
             $("#calculate").click(function () {
-                let table = {};
-                teamList.forEach(t => table[t] = { points: 0, goals: 0 });
+                let table = {}; teamList.forEach(t => table[t] = { points: 0, goals: 0 });
                 matches.forEach((m, i) => {
-                    let s1 = parseInt($("#s1_" + i).val());
-                    let s2 = parseInt($("#s2_" + i).val());
+                    let s1 = parseInt($("#s1_" + i).val()), s2 = parseInt($("#s2_" + i).val());
                     if (isNaN(s1) || isNaN(s2)) return;
                     table[m.team1].goals += s1; table[m.team2].goals += s2;
-                    if (s1 > s2) table[m.team1].points += 3;
-                    else if (s2 > s1) table[m.team2].points += 3;
-                    else { table[m.team1].points += 1; table[m.team2].points += 1; }
+                    if (s1 > s2) table[m.team1].points += 3; else if (s2 > s1) table[m.team2].points += 3; else { table[m.team1].points++; table[m.team2].points++; }
                 });
                 let sorted = Object.entries(table).sort((a, b) => b[1].points - a[1].points);
                 $("#tableBody").empty();
-                sorted.forEach(row => {
-                    $("#tableBody").append(`<tr data-team="${row[0]}"><td>${row[0]}</td><td>${row[1].points}</td><td>${row[1].goals}</td></tr>`);
-                });
+                sorted.forEach(row => { $("#tableBody").append(`<tr data-team="${row[0]}"><td>${row[0]}</td><td>${row[1].points}</td><td>${row[1].goals}</td></tr>`); });
             });
+
+            const canvas = document.getElementById("draw");
+            const ctx = canvas.getContext("2d");
+            function resizeCanvas() { const rect = canvas.getBoundingClientRect(); canvas.width = rect.width; canvas.height = rect.height; }
+            resizeCanvas(); window.addEventListener("resize", resizeCanvas);
 
             function loadTeam(team) {
                 $("#field").empty();
                 let positions = saved[team]?.positions || basePositions;
-                teams[team].forEach((playerName, i) => {
+                teams[team].forEach((p, i) => {
                     let pos = positions[i] || basePositions[i];
-                    $("#field").append(`<div class="player" data-i="${i}" style="top:${pos.top}%;left:${pos.left}%">${playerName}</div>`);
+                    $("#field").append(`<div class="player" data-i="${i}" style="top:${pos.top}%;left:${pos.left}%">${p}</div>`);
                 });
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                if (saved[team]?.drawing) {
-                    let img = new Image();
-                    img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    img.src = saved[team].drawing;
-                }
+                if (saved[team]?.drawing) { let img = new Image(); img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height); img.src = saved[team].drawing; }
             }
-
             $("#teamSelect").change(function () { loadTeam($(this).val()); });
+            $(document).on("click", "tr", function () { let t = $(this).data("team"); if (t) { $("#teamSelect").val(t).change(); } });
 
-            $(document).on("click", "tr", function () {
-                let team = $(this).data("team");
-                if (!team) return;
-                $("#teamSelect").val(team).change();
-            });
-
-            /* גרירה + טאץ */
+            // גרירה
             let drag = null;
-            $(document).on("mousedown touchstart", ".player", function () { drag = $(this); });
-            $(document).on("mouseup touchend", function () { drag = null; });
-            $(document).on("mousemove touchmove", function (e) {
-                if (!drag) return;
-                let touch = e.originalEvent.touches ? e.originalEvent.touches[0] : e;
-                let offset = $("#field").offset();
-                drag.css({ left: touch.pageX - offset.left, top: touch.pageY - offset.top });
-            });
+            $(document).on("mousedown touchstart", ".player", function (e) { drag = $(this); e.preventDefault(); });
+            $(document).on("mouseup touchend", () => drag = null);
+            $(document).on("mousemove touchmove", function (e) { if (!drag) return; e.preventDefault(); let t = e.originalEvent.touches ? e.originalEvent.touches[0] : e; let off = $("#field").offset(); drag.css({ left: t.pageX - off.left, top: t.pageY - off.top }); });
 
-            /* ציור */
-            const canvas = document.getElementById("draw");
-            const ctx = canvas.getContext("2d");
-
-            function resizeCanvas() {
-                const rect = canvas.getBoundingClientRect();
-                canvas.width = rect.width;
-                canvas.height = rect.height;
-            }
-            resizeCanvas();
-            window.addEventListener("resize", resizeCanvas);
-
+            // ציור
             let drawing = false;
-
-            $("#draw").on("mousedown touchstart", () => { drawing = true; ctx.beginPath(); });
-            $(document).on("mouseup touchend", () => drawing = false);
-
-            $("#draw").on("mousemove touchmove", function (e) {
-                if (!drawing) return;
-                let rect = canvas.getBoundingClientRect();
-                let touch = e.originalEvent.touches ? e.originalEvent.touches[0] : e;
-                let x = touch.clientX - rect.left;
-                let y = touch.clientY - rect.top;
-                ctx.lineTo(x, y);
-                ctx.strokeStyle = "red";
-                ctx.lineWidth = 3;
-                ctx.stroke();
+            $("#draw").on("mousedown touchstart", function (e) {
+                if (e.target.tagName === "BUTTON" || e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+                drawing = true; ctx.beginPath();
+                canvas.style.pointerEvents = "auto";
+                e.preventDefault();
             });
-
+            $(document).on("mouseup touchend", () => {
+                drawing = false; canvas.style.pointerEvents = "none";
+            });
+            $("#draw").on("mousemove touchmove", function (e) {
+                if (!drawing) return; e.preventDefault();
+                let rect = canvas.getBoundingClientRect();
+                let t = e.originalEvent.touches ? e.originalEvent.touches[0] : e;
+                ctx.lineTo(t.clientX - rect.left, t.clientY - rect.top);
+                ctx.strokeStyle = "red"; ctx.lineWidth = 3; ctx.stroke();
+            });
             $("#clearDraw").click(() => ctx.clearRect(0, 0, canvas.width, canvas.height));
 
-            /* שמירה */
+            // שמירה
             setInterval(() => {
                 let team = $("#teamSelect").val();
                 if (team) {
                     let pos = [];
-                    $(".player").each(function () {
-                        pos.push({
-                            top: parseFloat($(this).css("top")),
-                            left: parseFloat($(this).css("left"))
-                        });
-                    });
+                    $(".player").each(function () { pos.push({ top: parseFloat($(this).css("top")), left: parseFloat($(this).css("left")) }); });
                     saved[team] = { positions: pos, drawing: canvas.toDataURL() };
                 }
             }, 2000);
 
-            /* AI */
+            // AI
             $("#aiSuggest").click(function () {
                 let team = $("#teamSelect").val();
                 let rows = $("#tableBody tr");
                 let rank = 1;
-
-                rows.each(function (index) {
-                    if ($(this).data("team") === team) {
-                        rank = index + 1;
-                    }
-                });
-
+                rows.each(function (i) { if ($(this).data("team") === team) rank = i + 1; });
                 let message = "", newPositions = [];
-
-                if (rank >= 3) {
-                    message = "🔴 משחק התקפי!";
-                    newPositions = [{ top: 90, left: 50 }, { top: 70, left: 20 }, { top: 70, left: 40 }, { top: 70, left: 60 }, { top: 70, left: 80 }, { top: 55, left: 25 }, { top: 50, left: 50 }, { top: 55, left: 75 }, { top: 25, left: 20 }, { top: 25, left: 50 }, { top: 25, left: 80 }];
-                } else if (rank === 1) {
-                    message = "🟢 משחק הגנתי!";
-                    newPositions = [{ top: 90, left: 50 }, { top: 75, left: 15 }, { top: 75, left: 35 }, { top: 75, left: 65 }, { top: 75, left: 85 }, { top: 55, left: 30 }, { top: 55, left: 70 }, { top: 50, left: 50 }, { top: 35, left: 40 }, { top: 35, left: 60 }, { top: 30, left: 50 }];
-                } else {
-                    message = "🟡 משחק מאוזן";
-                    newPositions = basePositions;
-                }
-
-                $(".player").each(function (i) {
-                    $(this).css({
-                        top: newPositions[i].top + "%",
-                        left: newPositions[i].left + "%"
-                    });
-                });
-
+                if (rank >= 3) { message = "🔴 משחק התקפי!"; newPositions = [{ top: 90, left: 50 }, { top: 70, left: 20 }, { top: 70, left: 40 }, { top: 70, left: 60 }, { top: 70, left: 80 }, { top: 55, left: 25 }, { top: 50, left: 50 }, { top: 55, left: 75 }, { top: 25, left: 20 }, { top: 25, left: 50 }, { top: 25, left: 80 }]; }
+                else if (rank === 1) { message = "🟢 משחק הגנתי!"; newPositions = [{ top: 90, left: 50 }, { top: 75, left: 15 }, { top: 75, left: 35 }, { top: 75, left: 65 }, { top: 75, left: 85 }, { top: 55, left: 30 }, { top: 55, left: 70 }, { top: 50, left: 50 }, { top: 35, left: 40 }, { top: 35, left: 60 }, { top: 30, left: 50 }]; }
+                else { message = "🟡 משחק מאוזן"; newPositions = basePositions; }
+                $(".player").each(function (i) { $(this).css({ top: newPositions[i].top + "%", left: newPositions[i].left + "%" }); });
                 $("#aiBox").html(message);
             });
 
             loadTeam(teamList[0]);
-
         });
     </script>
-
 </body>
 </html>
